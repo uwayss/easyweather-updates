@@ -1,0 +1,13 @@
+{
+  "name": "easyweather-updates",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "publish": "node scripts/publish.js"
+  },
+  "dependencies": {
+    "@expo/config": "^7.0.3",
+    "fs-extra": "^10.1.0",
+    "yargs": "^17.4.1"
+  }
+}
