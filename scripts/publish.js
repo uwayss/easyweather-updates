@@ -1,9 +1,15 @@
-const fs = require("fs-extra");
-const path = require("path");
-const { execSync } = require("child_process");
-const yargs = require("yargs/yargs");
-const { hideBin } = require("yargs/helpers");
-const ExpoConfig = require("@expo/config");
+import {
+  existsSync,
+  ensureDirSync,
+  copySync,
+  readJsonSync,
+  writeJsonSync,
+} from "fs-extra";
+import { resolve, join } from "path";
+import { execSync } from "child_process";
+import yargs from "yargs/yargs";
+import { hideBin } from "yargs/helpers";
+import { getConfig } from "@expo/config";
 
 const argv = yargs(hideBin(process.argv)).options({
   "project-path": {
@@ -23,13 +29,13 @@ const argv = yargs(hideBin(process.argv)).options({
 function publish() {
   const { projectPath, runtimeVersion } = argv;
 
-  if (!fs.existsSync(projectPath)) {
+  if (!existsSync(projectPath)) {
     console.error(`Error: Project path does not exist: ${projectPath}`);
     process.exit(1);
   }
 
-  const projectDir = path.resolve(projectPath);
-  const updatesRepoDir = path.resolve(__dirname, "..");
+  const projectDir = resolve(projectPath);
+  const updatesRepoDir = resolve(__dirname, "..");
 
   console.log(`Publishing update for project: ${projectDir}`);
   console.log(`Platform: android`);
@@ -38,8 +44,8 @@ function publish() {
   console.log('\nRunning "npx expo export" for Android...');
   execSync("npx expo export -p android", { cwd: projectDir, stdio: "inherit" });
 
-  const exportDistPath = path.join(projectDir, "dist");
-  if (!fs.existsSync(exportDistPath)) {
+  const exportDistPath = join(projectDir, "dist");
+  if (!existsSync(exportDistPath)) {
     console.error(
       `Error: "dist" folder not found after export. Check for errors above.`
     );
@@ -47,7 +53,7 @@ function publish() {
   }
 
   const timestamp = Date.now();
-  const updateDirectory = path.join(
+  const updateDirectory = join(
     updatesRepoDir,
     "updates",
     runtimeVersion,
@@ -55,34 +61,34 @@ function publish() {
   );
 
   console.log(`\nCreating update directory: ${updateDirectory}`);
-  fs.ensureDirSync(updateDirectory);
+  ensureDirSync(updateDirectory);
 
   console.log(
     `Copying exported files from ${exportDistPath} to ${updateDirectory}`
   );
-  fs.copySync(exportDistPath, updateDirectory);
+  copySync(exportDistPath, updateDirectory);
 
-  const metadataPath = path.join(updateDirectory, "metadata.json");
-  if (fs.existsSync(metadataPath)) {
+  const metadataPath = join(updateDirectory, "metadata.json");
+  if (existsSync(metadataPath)) {
     console.log(
       "Sanitizing paths in metadata.json for platform compatibility..."
     );
-    const metadata = fs.readJsonSync(metadataPath);
+    const metadata = readJsonSync(metadataPath);
     metadata.fileMetadata.android.bundle =
       metadata.fileMetadata.android.bundle.replace(/\\/g, "/");
     metadata.fileMetadata.android.assets.forEach((asset) => {
       asset.path = asset.path.replace(/\\/g, "/");
     });
-    fs.writeJsonSync(metadataPath, metadata, { spaces: 2 });
+    writeJsonSync(metadataPath, metadata, { spaces: 2 });
   }
 
   console.log("Extracting public Expo config...");
-  const { exp } = ExpoConfig.getConfig(projectDir, {
+  const { exp } = getConfig(projectDir, {
     skipSDKVersionRequirement: true,
     isPublicConfig: true,
   });
-  const expoConfigPath = path.join(updateDirectory, "expoConfig.json");
-  fs.writeJsonSync(expoConfigPath, exp, { spaces: 2 });
+  const expoConfigPath = join(updateDirectory, "expoConfig.json");
+  writeJsonSync(expoConfigPath, exp, { spaces: 2 });
   console.log(`Saved public config to ${expoConfigPath}`);
 
   console.log("\nCommitting and pushing changes to this repository...");
