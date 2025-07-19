@@ -1,4 +1,3 @@
-// FILE: easyweather-updates/scripts/publish.js
 const fs = require("fs-extra");
 const path = require("path");
 const { execSync } = require("child_process");
@@ -11,7 +10,7 @@ const argv = yargs(hideBin(process.argv)).options({
     alias: "p",
     type: "string",
     demandOption: true,
-    describe: "Path to the Expo project to publish (e.g., ../easyweather-app).",
+    describe: "Path to the Expo project to publish (e.g., ../easyweather).",
   },
   "runtime-version": {
     alias: "r",
@@ -19,10 +18,17 @@ const argv = yargs(hideBin(process.argv)).options({
     demandOption: true,
     describe: "The runtime version for the update.",
   },
+  channel: {
+    alias: "c",
+    type: "string",
+    demandOption: true,
+    choices: ["production", "beta"],
+    describe: "The update channel to publish to.",
+  },
 }).argv;
 
 function publish() {
-  const { projectPath, runtimeVersion } = argv;
+  const { projectPath, runtimeVersion, channel } = argv;
 
   if (!fs.existsSync(projectPath)) {
     console.error(`Error: Project path does not exist: ${projectPath}`);
@@ -35,6 +41,7 @@ function publish() {
   console.log(`Publishing update for project: ${projectDir}`);
   console.log(`Platform: android`);
   console.log(`Runtime Version: ${runtimeVersion}`);
+  console.log(`Channel: ${channel}`);
 
   console.log('\nRunning "npx expo export" for Android...');
   execSync("npx expo export -p android", { cwd: projectDir, stdio: "inherit" });
@@ -52,6 +59,7 @@ function publish() {
     updatesRepoDir,
     "updates",
     runtimeVersion,
+    channel,
     String(timestamp)
   );
 
@@ -92,13 +100,13 @@ function publish() {
   execSync(`git config user.email "bot@expo.dev"`, gitOptions);
   execSync("git add .", gitOptions);
   execSync(
-    `git commit -m "Publish update for runtime ${runtimeVersion} at ${timestamp}"`,
+    `git commit -m "Publish [${channel}] update for runtime ${runtimeVersion} at ${timestamp}"`,
     gitOptions
   );
   execSync("git push", gitOptions);
 
   console.log(
-    "\n✅ Publish complete! The update is live in the GitHub repository."
+    `\n✅ Publish complete! The [${channel}] update is live in the GitHub repository.`
   );
 }
 
