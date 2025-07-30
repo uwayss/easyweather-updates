@@ -1,15 +1,16 @@
-import {
+// FILE: scripts/publish.js
+const {
   existsSync,
   ensureDirSync,
   copySync,
   readJsonSync,
   writeJsonSync,
-} from "fs-extra";
-import { resolve, join } from "path";
-import { execSync } from "child_process";
-import yargs from "yargs/yargs";
-import { hideBin } from "yargs/helpers";
-import { getConfig } from "@expo/config";
+} = require("fs-extra");
+const { resolve, join } = require("path");
+const { execSync } = require("child_process");
+const yargs = require("yargs/yargs");
+const { hideBin } = require("yargs/helpers");
+const { getConfig } = require("@expo/config");
 
 const argv = yargs(hideBin(process.argv)).options({
   "project-path": {
